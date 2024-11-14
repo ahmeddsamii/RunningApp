@@ -29,7 +29,6 @@ import com.example.runningapp.other.Constants.NOTIFICATION_ID
 import com.example.runningapp.other.Constants.NOTIFICATION_NAME
 import com.example.runningapp.other.TrackingUtility
 import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.FusedOrientationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
@@ -68,20 +67,22 @@ class TrackingServices : LifecycleService() {
 
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Timber.d("the intent is: ${intent?.action}")
         intent?.let {
-            when (intent.action) {
+            when (it.action) {
                 ACTION_START_OR_RESUME_SERVICE -> {
                     if (isFirstTimeToStartService) {
                         Timber.d("Starting foreground service")
-                        foregroundService()
+                        startForegroundService()
                         isFirstTimeToStartService = false
                     } else {
                         Timber.d("resuming service...")
+                        startForegroundService()
                     }
                 }
-
                 ACTION_PAUSE_SERVICE -> {
-                    Timber.d("paused service")
+                    pauseService()
+                    Timber.d("Paused service")
                 }
 
                 ACTION_STOP_SERVICE -> {
@@ -90,6 +91,11 @@ class TrackingServices : LifecycleService() {
             }
         }
         return super.onStartCommand(intent, flags, startId)
+    }
+
+    private fun pauseService() {
+        isTracking.postValue(false)
+        fusedLocationProviderClient.removeLocationUpdates(locationCallback)
     }
 
 
@@ -148,7 +154,7 @@ class TrackingServices : LifecycleService() {
     }
 
 
-    private fun foregroundService() {
+    private fun startForegroundService() {
         //this line is because when we start after pause to draw nothing then continue
         addEmptyPolyLine()
 

@@ -5,6 +5,9 @@
     android:id="@+id/nav_graph"
     app:startDestination="@id/setupFragment">
 
+    <action android:id="@+id/leadToTrackingFragment"
+        app:launchSingleTop="true"/>
+
     <fragment
         android:id="@+id/runFragment"
         android:name="com.example.runningapp.ui.viewmodels.fragments.RunFragment"

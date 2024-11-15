@@ -17,6 +17,7 @@ import com.example.runningapp.other.Constants.MAP_ZOOM
 import com.example.runningapp.other.Constants.NOTIFICATION_PERMISSION_REQUEST_CODE
 import com.example.runningapp.other.Constants.POLYLINE_COLOR
 import com.example.runningapp.other.Constants.POLYLINE_WIDTH
+import com.example.runningapp.other.TrackingUtility
 import com.example.runningapp.services.TrackingServices
 import com.example.runningapp.services.polyLine
 import com.example.runningapp.ui.viewmodels.MainViewModel
@@ -34,6 +35,7 @@ class TrackingFragment : Fragment(), EasyPermissions.PermissionCallbacks {
 
     private var isTracking = false
     private var pathPoint = mutableListOf<polyLine>()
+    private var currentTimeInMillis = 0L
 
     private val viewModel: MainViewModel by viewModels()
     override fun onCreateView(
@@ -74,6 +76,12 @@ class TrackingFragment : Fragment(), EasyPermissions.PermissionCallbacks {
             pathPoint = it
             addLatestPolyLine()
             moveCameraToUser()
+        }
+
+        TrackingServices.timeRunInMillis.observe(viewLifecycleOwner){
+            currentTimeInMillis = it
+            val formattedTime = TrackingUtility.getFormattedStopWatchTime(currentTimeInMillis,true)
+            binding.tvTimer.text = formattedTime
         }
     }
 

@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Intent
+import android.icu.util.Calendar
 import android.os.Build
 import android.os.Bundle
 import androidx.fragment.app.Fragment
@@ -13,10 +14,12 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.RequiresApi
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.runningapp.R
 import com.example.runningapp.databinding.FragmentTrackingBinding
+import com.example.runningapp.db.RunDto
 import com.example.runningapp.other.Constants.ACTION_PAUSE_SERVICE
 import com.example.runningapp.other.Constants.ACTION_START_OR_RESUME_SERVICE
 import com.example.runningapp.other.Constants.ACTION_STOP_SERVICE
@@ -30,11 +33,14 @@ import com.example.runningapp.services.polyLine
 import com.example.runningapp.ui.viewmodels.MainViewModel
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.GoogleMap
+import com.google.android.gms.maps.model.LatLngBounds
 import com.google.android.gms.maps.model.PolylineOptions
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import pub.devrel.easypermissions.AppSettingsDialog
 import pub.devrel.easypermissions.EasyPermissions
+import kotlin.math.round
 
 @AndroidEntryPoint
 class TrackingFragment : Fragment(), EasyPermissions.PermissionCallbacks {
@@ -45,6 +51,7 @@ class TrackingFragment : Fragment(), EasyPermissions.PermissionCallbacks {
     private var pathPoint = mutableListOf<polyLine>()
     private var currentTimeInMillis = 0L
     private var menu:Menu? = null
+    private var weight = 80f
 
     private val viewModel: MainViewModel by viewModels()
     override fun onCreateView(
@@ -58,6 +65,7 @@ class TrackingFragment : Fragment(), EasyPermissions.PermissionCallbacks {
     }
 
 
+    @RequiresApi(Build.VERSION_CODES.N)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.mapView.onCreate(savedInstanceState)
@@ -68,6 +76,11 @@ class TrackingFragment : Fragment(), EasyPermissions.PermissionCallbacks {
             }else{
                 toggleRun()
             }
+        }
+
+        binding.btnFinishRun.setOnClickListener{
+            zoomToSeeTheWholeTracking()
+            finishRunAndSaveToDatabase()
         }
 
         binding.mapView.getMapAsync {
@@ -175,6 +188,42 @@ class TrackingFragment : Fragment(), EasyPermissions.PermissionCallbacks {
                     MAP_ZOOM
                 )
             )
+        }
+    }
+
+
+    private fun zoomToSeeTheWholeTracking(){
+        val bounds = LatLngBounds.Builder()
+        for (polyline in pathPoint){
+            for (position in polyline){
+                bounds.include(position)
+            }
+        }
+
+        map?.moveCamera(
+            CameraUpdateFactory.newLatLngBounds(
+                bounds.build(),
+                binding.mapView.width,
+                binding.mapView.height,
+                (binding.mapView.height*0.05f).toInt()
+            )
+        )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.N)
+    private fun finishRunAndSaveToDatabase(){
+        map?.snapshot { bitmap ->
+            var distanceInMeters = 0
+            for(polyline in pathPoint){
+                distanceInMeters += TrackingUtility.calculateTotalDistance(polyline).toInt()
+            }
+            var avgSpeed = round((distanceInMeters / 1000L) / (currentTimeInMillis / 1000f / 60 / 60) * 10) /10f
+            val timeStamp = Calendar.getInstance().timeInMillis
+            val caloriesBurned = ((distanceInMeters / 1000f) * weight).toInt()
+            val run = RunDto(bitmap, timeStamp,avgSpeed,distanceInMeters,currentTimeInMillis, caloriesBurned)
+            viewModel.insertNewRun(run)
+            Snackbar.make(requireView(), "Run Saved Successfully", Snackbar.LENGTH_LONG).show()
+            stopRun()
         }
     }
 

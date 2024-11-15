@@ -12,6 +12,7 @@ import android.content.Intent
 import android.location.Location
 import android.os.Build
 import android.os.Looper
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.lifecycle.LifecycleService
@@ -27,6 +28,7 @@ import com.example.runningapp.other.Constants.LOCATION_UPDATE_INTERVAL
 import com.example.runningapp.other.Constants.NOTIFICATION_CHANNEL_ID
 import com.example.runningapp.other.Constants.NOTIFICATION_ID
 import com.example.runningapp.other.Constants.NOTIFICATION_NAME
+import com.example.runningapp.other.Constants.TIMER_UPDATE_INTERVAL
 import com.example.runningapp.other.TrackingUtility
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -35,6 +37,10 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority.PRIORITY_HIGH_ACCURACY
 import com.google.android.gms.maps.model.LatLng
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 
@@ -44,6 +50,7 @@ typealias polyLines = MutableList<polyLine>
 class TrackingServices : LifecycleService() {
 
     companion object {
+        var timeRunInMillis = MutableLiveData<Long>()
         val isTracking = MutableLiveData<Boolean>()
         val pathPoints = MutableLiveData<polyLines>()
     }
@@ -51,10 +58,13 @@ class TrackingServices : LifecycleService() {
     private fun postInitialValues() {
         isTracking.value = false
         pathPoints.value = mutableListOf()
+        timeRunInMillis.value = 0L
+        timeRunInSeconds.value = 0L
     }
 
     private var isFirstTimeToStartService = true
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
+    private val timeRunInSeconds = MutableLiveData<Long>()
 
     override fun onCreate() {
         super.onCreate()
@@ -77,7 +87,7 @@ class TrackingServices : LifecycleService() {
                         isFirstTimeToStartService = false
                     } else {
                         Timber.d("resuming service...")
-                        startForegroundService()
+                        startTimer()
                     }
                 }
                 ACTION_PAUSE_SERVICE -> {
@@ -95,9 +105,36 @@ class TrackingServices : LifecycleService() {
 
     private fun pauseService() {
         isTracking.postValue(false)
+        isTimeEnabled = false
         fusedLocationProviderClient.removeLocationUpdates(locationCallback)
     }
 
+
+    private var isTimeEnabled = false
+    private var lapTime = 0L
+    private var totalTimeRun = 0L
+    private var timeStarted = 0L
+    private var lastSecondTimeStamp = 0L
+
+    private fun startTimer(){
+        //this line is because when we start after pause to draw nothing then continue
+        addEmptyPolyLine()
+        isTracking.value = true
+        timeStarted = System.currentTimeMillis()
+        isTimeEnabled = true
+        CoroutineScope(Dispatchers.Main).launch {
+            while (isTracking.value!!){
+                lapTime = System.currentTimeMillis() - timeStarted
+                timeRunInMillis.value = totalTimeRun + lapTime
+                if (timeRunInMillis.value!! >= lastSecondTimeStamp + 1000L){
+                    timeRunInSeconds.postValue(timeRunInSeconds.value!! + 1)
+                    lastSecondTimeStamp += 1000L
+                }
+                delay(TIMER_UPDATE_INTERVAL)
+            }
+            totalTimeRun+= lapTime
+        }
+    }
 
     @SuppressLint("MissingPermission")
     private fun updateLocationTracking(isTracking: Boolean) {
@@ -155,8 +192,7 @@ class TrackingServices : LifecycleService() {
 
 
     private fun startForegroundService() {
-        //this line is because when we start after pause to draw nothing then continue
-        addEmptyPolyLine()
+        startTimer()
 
         isTracking.value = true
 

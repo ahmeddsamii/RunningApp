@@ -1,10 +1,14 @@
 package com.example.runningapp
 
+import android.content.Context
 import android.content.Intent
+import android.location.LocationManager
 import android.os.Bundle
+import android.provider.Settings
 import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContentProviderCompat.requireContext
 import androidx.navigation.NavOptions
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.ui.setupWithNavController
@@ -42,6 +46,20 @@ class MainActivity : AppCompatActivity() {
         if (intent.action == ACTION_SHOW_TRACKING_FRAGMENT) {
             navigateToTrackingFragmentFromNotification()
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (!isLocationEnabled()){
+            val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+            startActivity(intent)
+        }
+    }
+
+    private fun isLocationEnabled(): Boolean {
+        val locationManager =
+            getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
     }
 
 

@@ -43,6 +43,8 @@ import pub.devrel.easypermissions.EasyPermissions
 import javax.inject.Inject
 import kotlin.math.round
 
+const val CANCEL_TRACKING_TAG = "cancel dialog"
+
 @AndroidEntryPoint
 class TrackingFragment : Fragment(), EasyPermissions.PermissionCallbacks {
     private lateinit var binding:FragmentTrackingBinding
@@ -72,6 +74,13 @@ class TrackingFragment : Fragment(), EasyPermissions.PermissionCallbacks {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         binding.mapView.onCreate(savedInstanceState)
+
+        if (savedInstanceState != null){
+            val cancelTrackingFragment = parentFragmentManager.findFragmentByTag(CANCEL_TRACKING_TAG) as CancelTrackingFragment?
+            cancelTrackingFragment?.setYesListener {
+                stopRun()
+            }
+        }
 
         binding.btnToggleRun.setOnClickListener{
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -120,23 +129,17 @@ class TrackingFragment : Fragment(), EasyPermissions.PermissionCallbacks {
 
     @SuppressLint("SuspiciousIndentation")
     private fun showConfirmationForCancelRun(){
-        val alert = MaterialAlertDialogBuilder(requireContext(), R.style.AlertDialogTheme)
-            .setTitle("Cancel the Run?")
-            .setMessage("Are you sure you want to cancel this run and delete all its data?")
-            .setIcon(R.drawable.ic_delete)
-            .setPositiveButton("yes"){_, _->
+        CancelTrackingFragment().apply {
+            setYesListener {
                 stopRun()
             }
-            .setNegativeButton("No"){dialogInterface,_ ->
-                dialogInterface.cancel()
-            }
-            .create()
-
-            alert.show()
+        }.show(parentFragmentManager, CANCEL_TRACKING_TAG)
     }
 
 
+    @SuppressLint("SetTextI18n")
     private fun stopRun(){
+        binding.tvTimer.text = "00:00:00:00"
         sendCommandToService(ACTION_STOP_SERVICE)
         findNavController().navigate(R.id.action_trackingFragment_to_runFragment)
     }
@@ -173,10 +176,10 @@ class TrackingFragment : Fragment(), EasyPermissions.PermissionCallbacks {
     @SuppressLint("SetTextI18n")
     private fun updateTracking(isTracking:Boolean){
         this.isTracking = isTracking
-        if (!isTracking){
+        if (!isTracking && currentTimeInMillis > 0L){
             binding.btnToggleRun.text = "Start"
             binding.btnFinishRun.visibility = View.VISIBLE
-        }else{
+        }else if (isTracking){
             binding.btnToggleRun.text = "Stop"
             menu?.getItem(0)?.isVisible = true
             binding.btnFinishRun.visibility = View.GONE

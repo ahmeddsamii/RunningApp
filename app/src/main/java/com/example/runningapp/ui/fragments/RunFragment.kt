@@ -1,4 +1,4 @@
-package com.example.runningapp.ui.viewmodels.fragments
+package com.example.runningapp.ui.fragments
 
 import android.Manifest
 import android.content.Context
@@ -14,10 +14,13 @@ import android.view.ViewGroup
 import androidx.annotation.RequiresApi
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.runningapp.R
 import com.example.runningapp.databinding.FragmentRunBinding
+import com.example.runningapp.db.RunDto
 import com.example.runningapp.other.Constants.LOCATION_PERMISSION_CODE
 import com.example.runningapp.other.TrackingUtility
+import com.example.runningapp.ui.adapters.RunAdapter
 import com.example.runningapp.ui.viewmodels.MainViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import pub.devrel.easypermissions.AppSettingsDialog
@@ -27,10 +30,11 @@ import pub.devrel.easypermissions.EasyPermissions
 class RunFragment : Fragment(), EasyPermissions.PermissionCallbacks {
     private lateinit var binding: FragmentRunBinding
     private val viewModel: MainViewModel by viewModels()
+    private lateinit var runAdapter:RunAdapter
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         // Inflate the layout for this fragment
         binding = FragmentRunBinding.inflate(inflater, container, false)
         return binding.root
@@ -38,6 +42,12 @@ class RunFragment : Fragment(), EasyPermissions.PermissionCallbacks {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setUpRecyclerView()
+
+        viewModel.getAllRunSortedByDate().observe(viewLifecycleOwner){
+            runAdapter.submitList(it)
+        }
+
         binding.fab.setOnClickListener {
             findNavController().navigate(R.id.action_runFragment_to_trackingFragment)
         }
@@ -80,6 +90,15 @@ class RunFragment : Fragment(), EasyPermissions.PermissionCallbacks {
             LOCATION_PERMISSION_CODE + 1,
             Manifest.permission.ACCESS_BACKGROUND_LOCATION,
         )
+    }
+
+
+    private fun setUpRecyclerView(){
+        binding.rvRuns.apply {
+            runAdapter = RunAdapter()
+            this.adapter = runAdapter
+            this.layoutManager = LinearLayoutManager(requireContext())
+        }
     }
 
     override fun onPermissionsGranted(requestCode: Int, perms: MutableList<String>) {}

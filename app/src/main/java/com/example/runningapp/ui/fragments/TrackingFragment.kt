@@ -1,4 +1,4 @@
-package com.example.runningapp.ui.viewmodels.fragments
+package com.example.runningapp.ui.fragments
 
 import android.Manifest
 import android.annotation.SuppressLint

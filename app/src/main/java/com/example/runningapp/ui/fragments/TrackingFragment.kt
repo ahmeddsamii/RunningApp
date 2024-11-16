@@ -40,6 +40,7 @@ import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import pub.devrel.easypermissions.AppSettingsDialog
 import pub.devrel.easypermissions.EasyPermissions
+import javax.inject.Inject
 import kotlin.math.round
 
 @AndroidEntryPoint
@@ -51,7 +52,9 @@ class TrackingFragment : Fragment(), EasyPermissions.PermissionCallbacks {
     private var pathPoint = mutableListOf<polyLine>()
     private var currentTimeInMillis = 0L
     private var menu:Menu? = null
-    private var weight = 80f
+
+    @set:Inject
+    var weight = 80f
 
     private val viewModel: MainViewModel by viewModels()
     override fun onCreateView(

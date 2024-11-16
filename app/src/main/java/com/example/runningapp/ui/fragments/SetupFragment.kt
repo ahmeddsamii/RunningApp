@@ -36,7 +36,6 @@ class SetupFragment : Fragment() {
         binding = FragmentSetupBinding.inflate(inflater, container, false)
         return binding.root
     }
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
@@ -66,8 +65,11 @@ class SetupFragment : Fragment() {
                 .putBoolean(KEY_FIRST_TIME_TOGGLE, false)
                 .apply()
             setToolbarTitle("Let's go $name!")
+            return true
+        }else{
+            return false
         }
-        return true
+
     }
 
 

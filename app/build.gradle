@@ -1,3 +1,6 @@
+plugins {
+    alias(libs.plugins.google.gms.google.services)
+}
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
@@ -10,7 +13,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.runningapp"
-        minSdk 21
+        minSdk 23
         targetSdk 35
         versionCode 1
         versionName "1.0"
@@ -48,6 +51,7 @@ dependencies {
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
     implementation libs.androidx.lifecycle.service
+    implementation libs.firebase.auth
 
     // Test dependencies
     testImplementation(libs.junit)
@@ -55,36 +59,36 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 
     // Room (latest version)
-    implementation "androidx.room:room-runtime:2.6.1"
-    kapt "androidx.room:room-compiler:2.6.1"
-    implementation "androidx.room:room-ktx:2.6.1"
+    implementation libs.androidx.room.runtime
+    kapt libs.androidx.room.compiler
+    implementation libs.androidx.room.ktx
 
     // Lifecycle (latest version)
-    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7"
-    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.8.7"
+    implementation libs.androidx.lifecycle.viewmodel.ktx
+    implementation libs.androidx.lifecycle.runtime.ktx
 
     // Navigation Components (latest version)
     implementation libs.androidx.navigation.fragment.ktx
-    implementation "androidx.navigation:navigation-ui-ktx:2.8.3"
+    implementation libs.androidx.navigation.ui.ktx
 
     // Glide
-    implementation 'com.github.bumptech.glide:glide:4.16.0'
+    implementation libs.glide
     kapt 'com.github.bumptech.glide:compiler:4.11.0'
 
     // Google Play Services
-    implementation 'com.google.android.gms:play-services-location:21.3.0'
-    implementation 'com.google.android.gms:play-services-maps:19.0.0'
+    implementation libs.play.services.location
+    implementation libs.play.services.maps
 
     // Dagger and Hilt (correct versions)
-    implementation "com.google.dagger:hilt-android:2.51.1"
-    kapt "com.google.dagger:hilt-android-compiler:2.51.1"
+    implementation libs.hilt.android
+    kapt libs.hilt.android.compiler
 
     // Easy Permissions
-    implementation 'pub.devrel:easypermissions:3.0.0'
+    implementation libs.easypermissions
 
     // Timber for logging
-    implementation 'com.jakewharton.timber:timber:4.7.1'
+    implementation libs.timber
 
     // MPAndroidChart (If needed)
-     implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
+     implementation libs.mpandroidchart
 }
